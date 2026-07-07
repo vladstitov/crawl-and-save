@@ -1,0 +1,26 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit URL' : 'Add URL to scrape' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" (ngSubmit)="submit()" class="add-form">
+    <mat-form-field appearance="fill" class="full-width">
+      <mat-label>URL</mat-label>
+      <input matInput formControlName="url" placeholder="https://..." autofocus />
+      <mat-error *ngIf="form.controls.url.hasError('pattern')">
+        Please enter a valid HTTP(S) URL
+      </mat-error>
+      <mat-error *ngIf="form.controls.url.hasError('required')">
+        URL is required
+      </mat-error>
+    </mat-form-field>
+    
+    <mat-form-field appearance="fill" class="full-width mt-2">
+      <mat-label>Click Action (Optional)</mat-label>
+      <input matInput formControlName="clickAction" placeholder="e.g. #submit-btn" />
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-flat-button color="primary" [disabled]="form.invalid" (click)="submit()">{{ isEdit ? 'Save' : 'Add' }}</button>
+</mat-dialog-actions>

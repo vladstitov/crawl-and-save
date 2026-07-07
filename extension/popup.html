@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { font: 13px system-ui, sans-serif; width: 240px; padding: 12px; }
+      h1 { font-size: 14px; margin: 0 0 8px; }
+      .status { padding: 6px 8px; border-radius: 6px; background: #eee; }
+      .ok { background: #d6f5d6; }
+      .bad { background: #f7d6d6; }
+      .off { background: #e6e6e6; color: #555; }
+      .buttons { display: flex; gap: 8px; margin: 10px 0 4px; }
+      button {
+        flex: 1; padding: 6px 0; border: 1px solid #bbb; border-radius: 6px;
+        background: #fafafa; cursor: pointer; font: inherit;
+      }
+      button:hover:not(:disabled) { background: #f0f0f0; }
+      button:disabled { opacity: 0.5; cursor: default; }
+      #start-btn:not(:disabled) { border-color: #3a3; color: #2a7a2a; }
+      #stop-btn:not(:disabled) { border-color: #c33; color: #a22; }
+      small { color: #666; }
+    </style>
+  </head>
+  <body>
+    <h1>Scrape HTML Bridge</h1>
+    <div id="status" class="status">checking…</div>
+    <div class="buttons">
+      <button id="start-btn">Start</button>
+      <button id="stop-btn">Stop</button>
+    </div>
+    <p><small>Start/Stop the socket connection to the Node.js app at <code>ws://localhost:8765</code>.</small></p>
+    <script src="dist/popup.js"></script>
+  </body>
+</html>

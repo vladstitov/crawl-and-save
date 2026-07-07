@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Scrape HTML Bridge",
+  "version": "1.0.0",
+  "description": "Bridges the currently open browser to a local Node.js app: navigates a tab on command, waits for the page to fully load, scrapes the HTML, and sends it back.",
+  "permissions": ["tabs", "scripting", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "dist/background.js"
+  },
+  "action": {
+    "default_title": "Scrape HTML Bridge",
+    "default_popup": "popup.html"
+  }
+}

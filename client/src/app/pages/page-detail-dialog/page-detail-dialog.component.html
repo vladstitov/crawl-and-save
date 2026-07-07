@@ -1,0 +1,57 @@
+<h2 mat-dialog-title>{{ page.url }}</h2>
+
+<mat-dialog-content>
+  <mat-tab-group>
+    <mat-tab label="Details">
+      <table class="detail-table">
+        <tr><th>_id</th><td>{{ page._id }}</td></tr>
+        <tr><th>status</th><td>{{ page.status }}</td></tr>
+        <tr><th>statusMessage</th><td>{{ page.statusMessage || '—' }}</td></tr>
+        <tr><th>pageKind</th><td>{{ page.pageKind || '—' }}</td></tr>
+        <tr><th>Workflow</th><td>{{ page.Workflow || '—' }}</td></tr>
+        <tr><th>Pipeline</th><td>{{ page.Pipeline || '—' }}</td></tr>
+        <tr><th>htmlPageLength</th><td>{{ page.htmlPageLength ?? '—' }}</td></tr>
+        <tr><th>pageInputs</th><td>{{ page.pageInputs?.length || 0 }}</td></tr>
+        <tr><th>pageLinks</th><td>{{ page.pageLinks?.length || 0 }}</td></tr>
+        <tr><th>pageButtons</th><td>{{ page.pageButtons?.length || 0 }}</td></tr>
+        <tr><th>updated</th><td>{{ page.meta.updated | date: 'medium' }}</td></tr>
+      </table>
+    </mat-tab>
+
+    <mat-tab label="HTML preview" [disabled]="!page.htmlPage">
+      <iframe
+        *ngIf="page.htmlPage"
+        class="html-preview"
+        [srcdoc]="page.htmlPage"
+        sandbox=""
+      ></iframe>
+    </mat-tab>
+
+    <mat-tab label="Raw HTML" [disabled]="!page.htmlPage">
+      <pre class="raw-html">{{ page.htmlPage || 'Not scraped yet.' }}</pre>
+    </mat-tab>
+
+    <mat-tab label="Links" [disabled]="!page.pageLinks || page.pageLinks.length === 0">
+      <ul class="links-list" *ngIf="page.pageLinks && page.pageLinks.length">
+        <li *ngFor="let link of page.pageLinks">
+          <a [href]="anyLink(link).url" target="_blank" rel="noopener noreferrer">{{ anyLink(link).text }}</a>
+          <span class="link-url">({{ anyLink(link).url }})</span>
+        </li>
+      </ul>
+    </mat-tab>
+
+    <mat-tab label="Inputs" [disabled]="!page.pageInputs || page.pageInputs.length === 0">
+      <ul class="inputs-list" *ngIf="page.pageInputs && page.pageInputs.length">
+        <li *ngFor="let input of page.pageInputs">
+          <strong>Name:</strong> {{ anyInput(input).name || 'â€”' }} <br>
+          <strong>ID:</strong> {{ anyInput(input).id || 'â€”' }} <br>
+          <strong>Selector:</strong> <code>{{ anyInput(input).querySelector }}</code>
+        </li>
+      </ul>
+    </mat-tab>
+  </mat-tab-group>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Close</button>
+</mat-dialog-actions>
