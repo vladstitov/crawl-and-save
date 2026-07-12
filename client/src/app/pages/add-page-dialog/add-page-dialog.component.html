@@ -17,6 +17,10 @@
       <mat-label>Click Action (Optional)</mat-label>
       <input matInput formControlName="clickAction" placeholder="e.g. #submit-btn" />
     </mat-form-field>
+
+    <mat-checkbox *ngIf="isEdit" formControlName="rescrape" class="mt-2">
+      Re-scrape this page (resets scrapedAt)
+    </mat-checkbox>
   </form>
 </mat-dialog-content>
 

@@ -48,16 +48,16 @@ app.post("/pages", (req, res) => {
   res.json(doc);
 });
 
-/** Update URL. */
+/** Update URL. Set `rescrape: true` in the body to also clear `scrapedAt`. */
 app.put("/pages/:id", (req, res) => {
-  const { url, clickAction } = req.body;
+  const { url, clickAction, rescrape } = req.body;
   if (!url || typeof url !== "string") {
     res.status(400).json({ error: "Missing or invalid 'url' in JSON body" });
     return;
   }
   const id = req.params.id;
-  
-  const doc = editUrl(id, url, clickAction);
+
+  const doc = editUrl(id, url, clickAction, !!rescrape);
   if (!doc) {
     res.status(404).json({ error: "Record not found" });
     return;

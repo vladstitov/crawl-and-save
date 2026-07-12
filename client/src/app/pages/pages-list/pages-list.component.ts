@@ -36,6 +36,7 @@ export class PagesListComponent implements OnInit {
     'status',
     'pageKind',
     'htmlPageLength',
+    'scrapedAt',
     'updated',
     'actions'
   ];
@@ -97,11 +98,13 @@ export class PagesListComponent implements OnInit {
       data: { url: page.url, clickAction: page.clickAction }
     });
 
-    dialogRef.afterClosed().subscribe((result: { url: string, clickAction?: string } | undefined) => {
-      if (result && (result.url !== page.url || result.clickAction !== page.clickAction)) {
-        this.pagesService.updatePage(page._id, result.url, result.clickAction).subscribe({
+    dialogRef.afterClosed().subscribe((result: { url: string, clickAction?: string, rescrape?: boolean } | undefined) => {
+      const changed = result && (result.url !== page.url || result.clickAction !== page.clickAction);
+      if (result && (changed || result.rescrape)) {
+        this.pagesService.updatePage(page._id, result.url, result.clickAction, result.rescrape).subscribe({
           next: () => {
-            this.snackBar.open('URL updated successfully', 'Dismiss', { duration: 3000 });
+            const message = result.rescrape && !changed ? 'Page queued for re-scraping' : 'URL updated successfully';
+            this.snackBar.open(message, 'Dismiss', { duration: 3000 });
             this.load();
           },
           error: () => {

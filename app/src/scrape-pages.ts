@@ -65,14 +65,14 @@ function requestScrape(ws: WebSocket | null, url: string): void {
 }
 
 /**
- * Look up one row from the database whose `url` is set and whose `htmlPage`
+ * Look up one row from the database whose `url` is set and whose `scrapedAt`
  * is still null, then kick off a scrape for it. Does nothing if every row
  * has already been scraped.
  */
 function CheckToScrape(ws: WebSocket | null): void {
   const doc = getCollection().findOne({
     url: { $ne: null },
-    htmlPage: null,
+    scrapedAt: null,
   }) as WebPageDoc | null;
 
   if (!doc) {

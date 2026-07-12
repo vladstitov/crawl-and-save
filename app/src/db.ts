@@ -36,10 +36,12 @@ export function makeWebPage(url: string, extra: Partial<WebPage> = {}): WebPage 
     _id: randomUUID(),
     pageKind: "",
     url,
+    parentPageId: null,
     htmlPage: null,
     htmlPageLength: null,
-    paredData: null,
-    pageButtons: [],
+    scrapedAt: null,
+    parsedData: null,
+    pageInputs: [],
     pageLinks: [],
     status: "pending",
     statusMessage: "",
@@ -67,7 +69,7 @@ export function initDb(): Promise<Loki.Collection<WebPage>> {
         if (!col) {
           col = db.addCollection<WebPage>(COLLECTION, {
             unique: ["url"],
-            indices: ["status", "htmlPage"],
+            indices: ["status", "htmlPage", "scrapedAt"],
           });
         }
         webPages = col;
@@ -75,6 +77,21 @@ export function initDb(): Promise<Loki.Collection<WebPage>> {
         // Seed the first URL on an empty database.
         if (webPages.count() === 0) {
           webPages.insertOne(makeWebPage(SEED_URL));
+          db.saveDatabase();
+        }
+
+        // Backfill `scrapedAt` on rows saved before the field existed. LokiJS's
+        // `{scrapedAt: null}` query only matches an explicit null — a row where
+        // the key is entirely absent (legacy data) would never match and would
+        // be invisible to CheckToScrape's queue query forever.
+        const legacyDocs = webPages
+          .find()
+          .filter((doc) => !("scrapedAt" in (doc as object)));
+        if (legacyDocs.length > 0) {
+          for (const doc of legacyDocs) {
+            doc.scrapedAt = doc.htmlPage != null ? new Date(doc.meta.updated).toISOString() : null;
+          }
+          webPages.update(legacyDocs);
           db.saveDatabase();
         }
 
@@ -100,16 +117,25 @@ export function getNextPageToScrape(): WebPageDoc | null {
   return getCollection().findOne({ htmlPage: null }) as WebPageDoc | null;
 }
 
-/** Update the given URL with a new URL (and resets status to pending/null). Returns true if found and updated. */
-export function editUrl(id: string, newUrl: string, clickAction: string = ""): WebPageDoc | null {
+/**
+ * Update the given row's URL/click action. Existing scraped data (`htmlPage`,
+ * `htmlPageLength`, `status`, `statusMessage`) is left untouched. Pass
+ * `rescrape: true` to also clear `scrapedAt`, re-queuing the row for
+ * `CheckToScrape` without discarding anything else. Returns the updated row,
+ * or null if not found.
+ */
+export function editUrl(
+  id: string,
+  newUrl: string,
+  clickAction: string = "",
+  rescrape: boolean = false
+): WebPageDoc | null {
   const col = getCollection();
   const doc = col.findOne({ _id: id });
   if (doc) {
     doc.url = newUrl;
     if (clickAction !== undefined) doc.clickAction = clickAction;
-    doc.htmlPage = null; // Re-scrape on url change
-    doc.status = "pending";
-    doc.statusMessage = "";
+    if (rescrape) doc.scrapedAt = null;
     col.update(doc);
     db.saveDatabase();
     return doc;
@@ -152,9 +178,10 @@ export function saveScrapedHtml(
   const html = fields.htmlPage ?? "";
   doc.htmlPage = html;
   doc.htmlPageLength = fields.htmlPageLength ?? html.length;
+  doc.scrapedAt = fields.scrapedAt ?? new Date().toISOString();
   if (fields.pageKind !== undefined) doc.pageKind = fields.pageKind;
-  if (fields.paredData !== undefined) doc.paredData = fields.paredData;
-  if (fields.pageButtons !== undefined) doc.pageButtons = fields.pageButtons;
+  if (fields.parsedData !== undefined) doc.parsedData = fields.parsedData;
+  if (fields.pageInputs !== undefined) doc.pageInputs = fields.pageInputs;
   if (fields.pageLinks !== undefined) doc.pageLinks = fields.pageLinks;
   doc.status = fields.status ?? "scraped";
   doc.statusMessage = fields.statusMessage ?? "";

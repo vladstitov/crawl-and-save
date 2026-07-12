@@ -51,9 +51,9 @@ and DOM quiet so dynamically-rendered data is present in the scraped HTML.
 ## The database's role (queue)
 
 `app/src/db.ts` maintains a `webPages` collection in LokiJS. Each row is a page.
-`htmlPage === null` means "not scraped yet". `getNextPageToScrape()`-style logic
-(inlined as `CheckToScrape` in `browser-server.ts`) returns the next such row.
-The DB is seeded with `SEED_URL`, and `browser-server.ts` is wired to this queue
+`scrapedAt === null` means "not scraped yet". `CheckToScrape` in `scrape-pages.ts`
+queries on that predicate and returns the next such row.
+The DB is seeded with `SEED_URL`, and `scrape-pages.ts` is wired to this queue
 (see `state-and-tasks.md`).
 
 ## Directory map
@@ -63,7 +63,7 @@ scrap-html/
 ├── ai/                      ← this documentation
 ├── app/                     Node.js controller (separate TS project)
 │   ├── src/
-│   │   ├── browser-server.ts  WebSocket server + scrape orchestration + DB save
+│   │   ├── scrape-pages.ts  WebSocket server + scrape orchestration + DB save
 │   │   ├── db.ts            LokiJS connection, queue, seed, CRUD
 │   │   └── types.d.ts       ambient wire-protocol + WebPage types
 │   ├── dist/                compiled JS (tsc output)

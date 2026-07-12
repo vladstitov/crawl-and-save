@@ -9,7 +9,7 @@ Written in **TypeScript** throughout (compiled with `tsc`).
 ```
 scrap-html/
 ├── app/                 Node.js controller (WebSocket server)
-│   ├── src/browser-server.ts  TypeScript source
+│   ├── src/scrape-pages.ts  TypeScript source
 │   ├── dist/            compiled JS (npm run build)
 │   ├── tsconfig.json
 │   └── package.json
@@ -47,9 +47,9 @@ The next URL to scrape always comes from the database queue — seeded with
 ```bash
 cd app
 npm install
-npm start          # = tsc && node dist/browser-server.js
+npm start          # = tsc && node dist/scrape-pages.js
 # or, for live-reload during development:
-npm run dev        # tsx watch src/browser-server.ts
+npm run dev        # tsx watch src/scrape-pages.ts
 ```
 
 **2. Build & load the extension** (one time)
@@ -77,7 +77,7 @@ Click the extension's toolbar icon to see whether it's connected to the app.
 
 ## Tuning
 
-In `app/src/browser-server.ts`, `SCRAPE_OPTS` controls the wait behaviour:
+In `app/src/scrape-pages.ts`, `SCRAPE_OPTS` controls the wait behaviour:
 
 | option     | meaning                                                |
 | ---------- | ------------------------------------------------------ |

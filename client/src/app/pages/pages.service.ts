@@ -23,8 +23,8 @@ export class PagesService {
     return this.http.post<WebPage>(`${API_BASE}/pages`, { url, clickAction });
   }
 
-  updatePage(id: string, url: string, clickAction?: string): Observable<WebPage> {
-    return this.http.put<WebPage>(`${API_BASE}/pages/${id}`, { url, clickAction });
+  updatePage(id: string, url: string, clickAction?: string, rescrape?: boolean): Observable<WebPage> {
+    return this.http.put<WebPage>(`${API_BASE}/pages/${id}`, { url, clickAction, rescrape });
   }
 
   deletePage(id: string): Observable<void> {

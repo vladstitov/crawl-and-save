@@ -3,23 +3,25 @@
   "version": "1.0.0",
   "description": "Controls the Scrape HTML Bridge Chrome extension over WebSocket: tells the open browser to navigate to a URL, then saves the scraped HTML to a file.",
   "type": "module",
-  "main": "dist/browser-server.js",
+  "main": "dist/scrape-pages.js",
   "scripts": {
     "build": "tsc",
-    "start": "tsc && node dist/browser-server.js",
-    "dev": "tsx watch src/browser-server.ts",
+    "start": "tsc && node dist/scrape-pages.js",
+    "dev": "tsx watch src/scrape-pages.ts",
     "web": "tsc && node dist/web-server.js",
     "dev:web": "tsx watch src/web-server.ts"
   },
   "dependencies": {
-    "express": "^4.21.2",
     "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsdom": "^29.1.1",
     "lokijs": "^1.5.12",
     "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jsdom": "^28.0.3",
     "@types/lokijs": "^1.5.14",
     "@types/node": "^22.10.0",
     "@types/ws": "^8.5.13",

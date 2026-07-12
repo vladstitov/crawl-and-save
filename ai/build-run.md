@@ -11,9 +11,9 @@ Two independent TypeScript projects. Build each separately.
 ```bash
 cd app
 npm install
-npm start          # = tsc && node dist/browser-server.js  → listens on ws://localhost:8765
+npm start          # = tsc && node dist/scrape-pages.js  → listens on ws://localhost:8765
 # or:
-npm run dev        # tsx watch src/browser-server.ts (fast reload, no typecheck)
+npm run dev        # tsx watch src/scrape-pages.ts (fast reload, no typecheck)
 npm run build      # tsc only → dist/
 ```
 

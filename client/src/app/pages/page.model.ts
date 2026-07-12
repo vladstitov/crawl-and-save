@@ -14,11 +14,13 @@ export interface WebPage {
   _id: string;
   pageKind: string;
   url: string;
+  parentPageId?: string | null;
   htmlPage: string | null;
   htmlPageLength: number | null;
-  paredData: unknown;
-  pageInputs: unknown[];
-  pageButtons: unknown[];
+  scrapedAt: string | null;
+  parsedData: unknown;
+  // Optional: rows created before the field existed don't have it.
+  pageInputs?: unknown[];
   pageLinks: unknown[];
   status: string;
   statusMessage: string;

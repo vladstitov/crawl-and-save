@@ -5,7 +5,7 @@ Embedded document DB (LokiJS) persisted to `app/data/scrape.db.json`
 
 ## Collection: `webPages`
 
-Indexes: `url` is a **unique** index; `status` and `htmlPage` are indexed.
+Indexes: `url` is a **unique** index; `status`, `htmlPage`, and `scrapedAt` are indexed.
 
 ### Row shape — `WebPage` (defined in `app/src/types.d.ts`)
 
@@ -17,6 +17,7 @@ Indexes: `url` is a **unique** index; `status` and `htmlPage` are indexed.
 | `parentPageId` | `string \| null` | ID of the page that discovered or opened this page, if any |
 | `htmlPage` | `string \| null` | scraped HTML; **null = not scraped yet** |
 | `htmlPageLength` | `number \| null` | length of `htmlPage` |
+| `scrapedAt` | `string \| null` | ISO 8601 timestamp of when the page was scraped; null if not yet scraped |
 | `parsedData` | `JsonValue \| null` | parsed/extracted data |
 | `pageInputs` | `{ name: string, id: string, belongsTo: string, querySelector: string }[]` | extracted input fields/forms |
 | `pageLinks` | `{ url: string, title: string, text: string, belongsTo: string, querySelector: string, id: string }[]` | extracted links |
@@ -65,9 +66,19 @@ if (page) {
 ```
 
 ## Notes
-- `htmlPage === null` is the queue predicate. Setting `htmlPage` to a string (even
-  `""` via `saveScrapedHtml`) removes the row from the queue.
+- `scrapedAt === null` is the queue predicate the running app (`CheckToScrape` in
+  `scrape-pages.ts`) uses to find the next page to scrape. `saveScrapedHtml` stamps
+  `scrapedAt` with the current time on every save, removing the row from the queue.
+- `editUrl(id, url, clickAction, rescrape)` always updates `url`/`clickAction`, but
+  only clears `scrapedAt` when `rescrape` is `true` (wired to the "Re-scrape this
+  page" checkbox in the client's edit dialog) — it never touches `htmlPage`,
+  `htmlPageLength`, `status`, or `statusMessage`. Editing a URL no longer discards
+  the previously scraped content by itself; the row keeps showing its old data
+  until the explicit re-scrape completes and `saveScrapedHtml` overwrites it.
+- `getNextPageToScrape()` (unused by the running app, kept as a convenience export)
+  keys off `htmlPage === null` instead of `scrapedAt` — since `editUrl` no longer
+  moves the two fields together, they can now diverge (e.g. `scrapedAt: null` with
+  `htmlPage` still populated, mid-re-scrape). `CheckToScrape` is the source of truth
+  for the running app's queue behavior.
 - The process stays alive while the Loki autosave timer is active — expected for
   a long-running server; a short script should exit explicitly.
-- Field name `paredData` is kept exactly as specified (likely intended
-  `parsedData`); rename in `types.d.ts` + `db.ts` if desired.

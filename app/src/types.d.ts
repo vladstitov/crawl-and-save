@@ -1,7 +1,7 @@
 // Wire-protocol definitions for the Scrape HTML Bridge app.
 //
 // Declared globally (this file has no import/export, so its declarations are
-// ambient) and therefore visible to browser-server.ts without a runtime
+// ambient) and therefore visible to scrape-pages.ts without a runtime
 // import. A .d.ts emits no JavaScript, so there is nothing to load at
 // runtime.
 //
@@ -86,6 +86,8 @@ interface WebPage {
   htmlPage: string | null;
   /** Length of the HTML content in characters. Null if not yet scraped. */
   htmlPageLength: number | null;
+  /** ISO 8601 timestamp of when the page was scraped. Null if not yet scraped. */
+  scrapedAt: string | null;
   /** Extracted or parsed JSON data from the scraped HTML. */
   parsedData: JsonValue | null;
   /** Collection of clickable buttons found on the page. */

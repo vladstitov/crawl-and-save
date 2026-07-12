@@ -57,14 +57,14 @@ function requestScrape(ws, url) {
     ws.send(JSON.stringify(command));
 }
 /**
- * Look up one row from the database whose `url` is set and whose `htmlPage`
+ * Look up one row from the database whose `url` is set and whose `scrapedAt`
  * is still null, then kick off a scrape for it. Does nothing if every row
  * has already been scraped.
  */
 function CheckToScrape(ws) {
     const doc = getCollection().findOne({
         url: { $ne: null },
-        htmlPage: null,
+        scrapedAt: null,
     });
     if (!doc) {
         console.log("[app] No pending pages to scrape.");
@@ -136,4 +136,4 @@ process.on("SIGINT", () => {
     console.log("\n[app] Shutting down.");
     wss.close(() => process.exit(0));
 });
-//# sourceMappingURL=browser-server.js.map
+//# sourceMappingURL=scrape-pages.js.map

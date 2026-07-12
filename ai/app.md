@@ -1,19 +1,19 @@
 # App (`app/`) — Node.js controller
 
 A TypeScript Node.js project (`"type": "module"`). Compiled with `tsc` to
-`dist/`, run as `node dist/browser-server.js`.
+`dist/`, run as `node dist/scrape-pages.js`.
 
 ## Files
 
 | File | Role |
 |---|---|
-| `src/browser-server.ts` | WebSocket server, scrape orchestration — talks only to the extension |
+| `src/scrape-pages.ts` | WebSocket server, scrape orchestration — talks only to the extension |
 | `src/db.ts` | LokiJS queue (see `database.md`) |
 | `src/types.d.ts` | ambient wire-protocol + `WebPage` types |
 | `package.json` | deps: `ws`, `lokijs`; dev: `typescript`, `tsx`, `@types/*` |
 | `tsconfig.json` | target ES2022, `module: ESNext`, `moduleResolution: Bundler`, `strict`, `types: ["node"]` |
 
-## `src/browser-server.ts`
+## `src/scrape-pages.ts`
 
 ### Constants
 - `PORT = 8765`
@@ -46,7 +46,7 @@ the `webPages` database queue (see `database.md`).
 - `requestScrape(ws, url)` — sends a typed `NavigateCommand` for the given url;
   no-op if the socket is not OPEN.
 - `CheckToScrape(ws)` — queries `getCollection().findOne({ url: { $ne: null },
-  htmlPage: null })` for the next row still needing a scrape, stores it in the
+  scrapedAt: null })` for the next row still needing a scrape, stores it in the
   module-level `pendingDoc`, and calls `requestScrape(ws, doc.url)`. Logs and
   does nothing if every row has already been scraped.
 
@@ -62,8 +62,8 @@ the `webPages` database queue (see `database.md`).
 
 ## npm scripts
 - `npm run build` → `tsc`
-- `npm start` → `tsc && node dist/browser-server.js`
-- `npm run dev` → `tsx watch src/browser-server.ts` (no typecheck; fast reload)
+- `npm start` → `tsc && node dist/scrape-pages.js`
+- `npm run dev` → `tsx watch src/scrape-pages.ts` (no typecheck; fast reload)
 
 ## Extending the app
 - **Error handling:** on `error` messages, consider updating the row's
