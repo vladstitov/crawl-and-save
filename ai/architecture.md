@@ -37,7 +37,14 @@ connection*, not a server.
    captures data loaded *after* the initial document.
 6. Extension injects `scrapeHtml` and returns `document.documentElement.outerHTML`.
 7. Extension sends an `html` message back.
-8. App saves the HTML into the matching `webPages` row in the database.
+8. App parses the HTML with jsdom (`extractLinksAndInputs`) to pull out
+   `pageLinks`/`pageInputs`, then saves HTML + links + inputs into the matching
+   `webPages` row (`saveScrapedHtml`).
+9. App resolves every discovered link to an absolute URL and enqueues it as a
+   new queue row (`enqueueLinksFromDoc` in `distrebute-links.ts`), tagged with
+   `parent_id` pointing back at the page that linked to it.
+10. App automatically checks the queue again and repeats from step 3 — the
+    crawl drains the queue (growing it as it goes) with no manual step needed.
 
 Throughout steps 4–6 the extension emits `status` messages (`navigating`,
 `loaded`, `settled`) for progress logging.
@@ -54,7 +61,9 @@ and DOM quiet so dynamically-rendered data is present in the scraped HTML.
 `scrapedAt === null` means "not scraped yet". `CheckToScrape` in `scrape-pages.ts`
 queries on that predicate and returns the next such row.
 The DB is seeded with `SEED_URL`, and `scrape-pages.ts` is wired to this queue
-(see `state-and-tasks.md`).
+and self-drains it (see `state-and-tasks.md`): every scrape's discovered links
+are enqueued as new rows (`distrebute-links.ts`), so the queue keeps growing
+until the crawl runs out of new links to find.
 
 ## Directory map
 
@@ -63,9 +72,12 @@ scrap-html/
 ├── ai/                      ← this documentation
 ├── app/                     Node.js controller (separate TS project)
 │   ├── src/
-│   │   ├── scrape-pages.ts  WebSocket server + scrape orchestration + DB save
-│   │   ├── db.ts            LokiJS connection, queue, seed, CRUD
-│   │   └── types.d.ts       ambient wire-protocol + WebPage types
+│   │   ├── scrape-pages.ts     WebSocket server + scrape orchestration + DB save
+│   │   ├── db.ts               LokiJS connection, queue, seed, CRUD
+│   │   ├── distrebute-links.ts enqueues a scraped page's links as new queue rows
+│   │   ├── parse-html-page.ts  jsdom link/input extraction
+│   │   ├── web-server.ts       Express read/write API over the queue
+│   │   └── types.d.ts          ambient wire-protocol + WebPage types
 │   ├── dist/                compiled JS (tsc output)
 │   ├── data/                LokiJS db file (created at runtime)
 │   ├── tsconfig.json

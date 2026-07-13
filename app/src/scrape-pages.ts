@@ -16,6 +16,8 @@
 
 import { WebSocketServer, WebSocket, type RawData } from "ws";
 import { initDb, getCollection, saveScrapedHtml, type WebPageDoc } from "./db.js";
+import { extractLinksAndInputs } from "./parse-html-page.js";
+import { enqueueLinksFromDoc } from "./distrebute-links.js";
 
 const PORT = 8765;
 
@@ -115,15 +117,23 @@ wss.on("connection", (ws: WebSocket) => {
         );
 
         if (pendingDoc) {
+          const { links, inputs } = extractLinksAndInputs(msg.html);
           saveScrapedHtml(pendingDoc, {
             htmlPage: msg.html,
             htmlPageLength: msg.bytes ?? msg.html.length,
+            pageLinks: links,
+            pageInputs: inputs,
           });
-          console.log(`[app] Saved HTML to database row for ${pendingDoc.url}\n`);
+          console.log(`[app] Saved HTML to database row for ${pendingDoc.url}`);
+
+          const linksAdded = enqueueLinksFromDoc(pendingDoc);
+          console.log(`[app] Enqueued ${linksAdded} links found on the page\n`);
+
           pendingDoc = null;
         }
 
-        console.log("[app] Press <Enter> to check for another page to scrape, or Ctrl+C to quit.");
+        console.log("[app] Checking for another page to scrape...");
+        CheckToScrape(activeSocket);
         break;
       }
 

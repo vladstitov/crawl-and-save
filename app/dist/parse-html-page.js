@@ -1,22 +1,8 @@
 import { JSDOM } from "jsdom";
 import { initDb, getCollection } from "./db.js";
-export async function parseHtml() {
-    await initDb();
-    const coll = getCollection();
-    // Find a record where htmlPage length > 300 and pageLinks is essentially empty/null
-    const allDocs = coll.chain().find({ htmlPageLength: { $gt: 300 }, htmlPage: { $ne: null } }).data();
-    console.log(`Found ${allDocs.length} docs with htmlPageLength > 300 and htmlPage not null.`);
-    const doc = allDocs.find(d => !d.pageLinks || d.pageLinks.length === 0);
-    if (!doc) {
-        console.log("No suitable row found.");
-        return;
-    }
-    console.log(`Parsing page _id: ${doc._id}, url: ${doc.url}`);
-    if (!doc.htmlPage) {
-        console.log("Missing htmlPage");
-        return;
-    }
-    const dom = new JSDOM(doc.htmlPage);
+/** Extract `<a>` links and form-ish inputs out of a raw HTML string. */
+export function extractLinksAndInputs(html) {
+    const dom = new JSDOM(html);
     const document = dom.window.document;
     const links = [];
     document.querySelectorAll("a").forEach((a) => {
@@ -64,6 +50,25 @@ export async function parseHtml() {
             querySelector: el.tagName.toLowerCase()
         });
     });
+    return { links, inputs };
+}
+export async function parseHtml() {
+    await initDb();
+    const coll = getCollection();
+    // Find a record where htmlPage length > 300 and pageLinks is essentially empty/null
+    const allDocs = coll.chain().find({ htmlPageLength: { $gt: 300 }, htmlPage: { $ne: null } }).data();
+    console.log(`Found ${allDocs.length} docs with htmlPageLength > 300 and htmlPage not null.`);
+    const doc = allDocs.find(d => !d.pageLinks || d.pageLinks.length === 0);
+    if (!doc) {
+        console.log("No suitable row found.");
+        return;
+    }
+    console.log(`Parsing page _id: ${doc._id}, url: ${doc.url}`);
+    if (!doc.htmlPage) {
+        console.log("Missing htmlPage");
+        return;
+    }
+    const { links, inputs } = extractLinksAndInputs(doc.htmlPage);
     doc.pageLinks = links;
     doc.pageInputs = inputs;
     coll.update(doc);

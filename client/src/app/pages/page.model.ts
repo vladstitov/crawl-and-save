@@ -14,7 +14,7 @@ export interface WebPage {
   _id: string;
   pageKind: string;
   url: string;
-  parentPageId?: string | null;
+  parent_id?: string | null;
   htmlPage: string | null;
   htmlPageLength: number | null;
   scrapedAt: string | null;

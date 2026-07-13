@@ -2,6 +2,55 @@ import { JSDOM } from "jsdom";
 import { initDb, getCollection } from "./db.js";
 import { WebPageDoc } from "./db.js";
 
+/** Extract `<a>` links and form-ish inputs out of a raw HTML string. */
+export function extractLinksAndInputs(html: string): {
+  links: WebPageDoc["pageLinks"];
+  inputs: WebPageDoc["pageInputs"];
+} {
+  const dom = new JSDOM(html);
+  const document = dom.window.document;
+
+  const links: WebPageDoc["pageLinks"] = [];
+  document.querySelectorAll("a").forEach((a) => {
+    let parent = a.parentElement;
+    let belongsTo = "";
+    while (parent) {
+      if (parent.id) { belongsTo = parent.id; break; }
+      if (parent.getAttribute("name")) { belongsTo = parent.getAttribute("name")!; break; }
+      parent = parent.parentElement;
+    }
+
+    links.push({
+      url: a.href || "",
+      title: a.title || "",
+      text: a.textContent?.trim() || "",
+      belongsTo: belongsTo,
+      querySelector: "a",
+      id: a.id || ""
+    });
+  });
+
+  const inputs: WebPageDoc["pageInputs"] = [];
+  document.querySelectorAll("input, textarea, select, button").forEach((el) => {
+    let parent = el.parentElement;
+    let belongsTo = "";
+    while (parent) {
+      if (parent.id) { belongsTo = parent.id; break; }
+      if (parent.getAttribute("name")) { belongsTo = parent.getAttribute("name")!; break; }
+      parent = parent.parentElement;
+    }
+
+    inputs.push({
+      name: el.getAttribute("name") || "",
+      id: el.id || "",
+      belongsTo: belongsTo,
+      querySelector: el.tagName.toLowerCase()
+    });
+  });
+
+  return { links, inputs };
+}
+
 export async function parseHtml() {
   await initDb();
   const coll = getCollection();
@@ -23,46 +72,7 @@ export async function parseHtml() {
     return;
   }
 
-  const dom = new JSDOM(doc.htmlPage);
-  const document = dom.window.document;
-
-  const links: any[] = [];
-  document.querySelectorAll("a").forEach((a) => {
-    let parent = a.parentElement;
-    let belongsTo = "";
-    while(parent) {
-      if (parent.id) { belongsTo = parent.id; break; }
-      if (parent.getAttribute("name")) { belongsTo = parent.getAttribute("name")!; break; }
-      parent = parent.parentElement;
-    }
-    
-    links.push({
-      url: a.href || "",
-      title: a.title || "",
-      text: a.textContent?.trim() || "",
-      belongsTo: belongsTo,
-      querySelector: "a",
-      id: a.id || ""
-    });
-  });
-
-  const inputs: any[] = [];
-  document.querySelectorAll("input, textarea, select, button").forEach((el) => {
-     let parent = el.parentElement;
-     let belongsTo = "";
-     while(parent) {
-       if (parent.id) { belongsTo = parent.id; break; }
-       if (parent.getAttribute("name")) { belongsTo = parent.getAttribute("name")!; break; }
-       parent = parent.parentElement;
-     }
-
-     inputs.push({
-       name: el.getAttribute("name") || "",
-       id: el.id || "",
-       belongsTo: belongsTo,
-       querySelector: el.tagName.toLowerCase()
-     });
-  });
+  const { links, inputs } = extractLinksAndInputs(doc.htmlPage);
 
   doc.pageLinks = links;
   doc.pageInputs = inputs;

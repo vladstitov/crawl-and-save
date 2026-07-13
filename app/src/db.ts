@@ -36,7 +36,7 @@ export function makeWebPage(url: string, extra: Partial<WebPage> = {}): WebPage 
     _id: randomUUID(),
     pageKind: "",
     url,
-    parentPageId: null,
+    parent_id: null,
     htmlPage: null,
     htmlPageLength: null,
     scrapedAt: null,
@@ -109,6 +109,11 @@ export function getCollection(): Loki.Collection<WebPage> {
   return webPages;
 }
 
+/** Trigger a fire-and-forget save (also happens automatically via autosave). */
+export function saveNow(): void {
+  db.saveDatabase();
+}
+
 /**
  * The next page still needing a scrape: the first row whose `htmlPage` is null.
  * Returns null when every page has been scraped.
@@ -170,6 +175,15 @@ export function enqueueUrl(url: string, extra: Partial<WebPage> = {}): WebPageDo
   return getCollection().insertOne(makeWebPage(url, extra)) as WebPageDoc;
 }
 
+/** Force a synchronous flush to disk (also happens automatically via autosave). */
+export function flush(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    db.saveDatabase((err?: unknown) =>
+      err ? reject(err instanceof Error ? err : new Error(String(err))) : resolve()
+    );
+  });
+}
+
 /** Store the scraped HTML on a row, clearing its "needs scraping" flag. */
 export function saveScrapedHtml(
   doc: WebPageDoc,
@@ -191,13 +205,4 @@ export function saveScrapedHtml(
 
   getCollection().update(doc);
   return doc;
-}
-
-/** Force a synchronous flush to disk (also happens automatically via autosave). */
-export function flush(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    db.saveDatabase((err?: unknown) =>
-      err ? reject(err instanceof Error ? err : new Error(String(err))) : resolve()
-    );
-  });
 }

@@ -15,6 +15,8 @@
 //   Press <Enter> in this terminal to check for another page to scrape.
 import { WebSocketServer, WebSocket } from "ws";
 import { initDb, getCollection, saveScrapedHtml } from "./db.js";
+import { extractLinksAndInputs } from "./parse-html-page.js";
+import { enqueueLinksFromDoc } from "./distrebute-links.js";
 const PORT = 8765;
 // Tuning passed to the extension's page-settle logic (all milliseconds).
 // Wire-protocol types (ScrapeOpts, NavigateCommand, StatusMessage,
@@ -97,14 +99,20 @@ wss.on("connection", (ws) => {
             case "html": {
                 console.log(`[app] <- received HTML (${msg.bytes ?? msg.html.length} chars) from ${msg.finalUrl}`);
                 if (pendingDoc) {
+                    const { links, inputs } = extractLinksAndInputs(msg.html);
                     saveScrapedHtml(pendingDoc, {
                         htmlPage: msg.html,
                         htmlPageLength: msg.bytes ?? msg.html.length,
+                        pageLinks: links,
+                        pageInputs: inputs,
                     });
-                    console.log(`[app] Saved HTML to database row for ${pendingDoc.url}\n`);
+                    console.log(`[app] Saved HTML to database row for ${pendingDoc.url}`);
+                    const linksAdded = enqueueLinksFromDoc(pendingDoc);
+                    console.log(`[app] Enqueued ${linksAdded} links found on the page\n`);
                     pendingDoc = null;
                 }
-                console.log("[app] Press <Enter> to check for another page to scrape, or Ctrl+C to quit.");
+                console.log("[app] Checking for another page to scrape...");
+                CheckToScrape(activeSocket);
                 break;
             }
             case "error":

@@ -81,7 +81,7 @@ interface WebPage {
   /** The target URL to be scraped or that has been scraped. */
   url: string;
   /** ID of the page that discovered or opened this page, if any. */
-  parentPageId: string | null;
+  parent_id: string | null;
   /** The raw HTML content of the page. Null if not yet scraped. */
   htmlPage: string | null;
   /** Length of the HTML content in characters. Null if not yet scraped. */

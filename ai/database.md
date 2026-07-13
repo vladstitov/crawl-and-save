@@ -14,7 +14,7 @@ Indexes: `url` is a **unique** index; `status`, `htmlPage`, and `scrapedAt` are 
 | `_id` | `string` | app-generated UUID (`crypto.randomUUID()`) |
 | `pageKind` | `string` | caller-defined page classification |
 | `url` | `string` | page URL (unique) |
-| `parentPageId` | `string \| null` | ID of the page that discovered or opened this page, if any |
+| `parent_id` | `string \| null` | ID of the page that discovered or opened this page, if any |
 | `htmlPage` | `string \| null` | scraped HTML; **null = not scraped yet** |
 | `htmlPageLength` | `number \| null` | length of `htmlPage` |
 | `scrapedAt` | `string \| null` | ISO 8601 timestamp of when the page was scraped; null if not yet scraped |
@@ -47,7 +47,12 @@ On an empty database, one row is inserted:
 | `enqueueUrl(url, extra?)` | `(string, Partial<WebPage>?) => WebPageDoc` | add if absent (dedup by url); returns existing/new row |
 | `saveScrapedHtml(doc, fields)` | `(WebPageDoc, Pick<WebPage,"htmlPage"> & Partial<WebPage>) => WebPageDoc` | store HTML (+optional parsed fields), set `htmlPageLength`, default `status` to `scraped`, persist |
 | `makeWebPage(url, extra?)` | `(string, Partial<WebPage>?) => WebPage` | build a row with defaults (`htmlPage: null`) |
-| `flush()` | `() => Promise<void>` | force a save to disk |
+| `saveNow()` | `() => void` | fire-and-forget save to disk (does not await completion — use `flush()` if you need that) |
+| `flush()` | `() => Promise<void>` | force a save to disk, resolving once it's actually written |
+
+Link-discovery-to-queue logic (`enqueueLinksFromDoc`) lives in
+`app/src/distrebute-links.ts`, not here — see `app.md`. It's built on top of
+`enqueueUrl` above.
 
 ## Typical usage
 

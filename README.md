@@ -9,7 +9,10 @@ Written in **TypeScript** throughout (compiled with `tsc`).
 ```
 scrap-html/
 ├── app/                 Node.js controller (WebSocket server)
-│   ├── src/scrape-pages.ts  TypeScript source
+│   ├── src/scrape-pages.ts     WebSocket server + scrape orchestration
+│   ├── src/db.ts               LokiJS queue (webPages collection)
+│   ├── src/distrebute-links.ts enqueues a scraped page's links as new rows
+│   ├── src/parse-html-page.ts  jsdom link/input extraction
 │   ├── dist/            compiled JS (npm run build)
 │   ├── tsconfig.json
 │   └── package.json
@@ -34,11 +37,16 @@ scrap-html/
    - network (fetch/XHR) **and** DOM mutations to go quiet for `idleMs`
      (so data fetched after initial load is captured).
 5. The extension scrapes `document.documentElement.outerHTML` and sends it back.
-6. The app saves it into the matching row of the `webPages` database
-   (`app/data/scrape.db.json`).
+6. The app parses the HTML for links/inputs, saves everything into the matching
+   row of the `webPages` database (`app/data/scrape.db.json`), and enqueues
+   every discovered link as a new row (tagged with `parent_id`), so the queue
+   grows as the crawl finds more pages.
+7. The app automatically checks the queue for the next pending row and repeats
+   — no manual step needed between pages.
 
 The next URL to scrape always comes from the database queue — seeded with
 `SEED_URL` in [`app/src/db.ts`](app/src/db.ts): `https://secondarylink.com/seclink/news`.
+Link discovery/enqueueing lives in [`app/src/distrebute-links.ts`](app/src/distrebute-links.ts).
 
 ## Setup & run
 
@@ -69,9 +77,12 @@ npm run build      # compiles src/*.ts -> dist/*.js
 > change (then hit the reload icon on the extension card).
 
 Once both are running, the extension connects automatically and the first
-scrape begins. The app logs progress and saves the HTML into the database row
-for that URL. Press **Enter** in the app's terminal to check the database for
-another pending page to scrape; **Ctrl+C** to quit.
+scrape begins. The app logs progress, saves the HTML into the database row for
+that URL, and automatically moves on to the next pending page (including any
+new pages discovered from links on the one it just scraped) — it keeps going
+on its own until the queue is empty. Press **Enter** in the app's terminal to
+force a queue check (e.g. if it stalls waiting for the extension); **Ctrl+C**
+to quit.
 
 Click the extension's toolbar icon to see whether it's connected to the app.
 

@@ -4,3 +4,6 @@ node_modules/
 
 # All dot folders (e.g. .vscode, .angular, .git, etc.)
 .*/
+
+# Scrape database (grows large with crawl data; not meant to be versioned)
+app/data/*.json

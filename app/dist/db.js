@@ -28,7 +28,7 @@ export function makeWebPage(url, extra = {}) {
         _id: randomUUID(),
         pageKind: "",
         url,
-        parentPageId: null,
+        parent_id: null,
         htmlPage: null,
         htmlPageLength: null,
         scrapedAt: null,
@@ -94,6 +94,10 @@ export function getCollection() {
         throw new Error("DB not initialised — call initDb() first");
     return webPages;
 }
+/** Trigger a fire-and-forget save (also happens automatically via autosave). */
+export function saveNow() {
+    db.saveDatabase();
+}
 /**
  * The next page still needing a scrape: the first row whose `htmlPage` is null.
  * Returns null when every page has been scraped.
@@ -148,6 +152,12 @@ export function enqueueUrl(url, extra = {}) {
         return existing;
     return getCollection().insertOne(makeWebPage(url, extra));
 }
+/** Force a synchronous flush to disk (also happens automatically via autosave). */
+export function flush() {
+    return new Promise((resolve, reject) => {
+        db.saveDatabase((err) => err ? reject(err instanceof Error ? err : new Error(String(err))) : resolve());
+    });
+}
 /** Store the scraped HTML on a row, clearing its "needs scraping" flag. */
 export function saveScrapedHtml(doc, fields) {
     const html = fields.htmlPage ?? "";
@@ -172,11 +182,5 @@ export function saveScrapedHtml(doc, fields) {
         doc.clickAction = fields.clickAction;
     getCollection().update(doc);
     return doc;
-}
-/** Force a synchronous flush to disk (also happens automatically via autosave). */
-export function flush() {
-    return new Promise((resolve, reject) => {
-        db.saveDatabase((err) => err ? reject(err instanceof Error ? err : new Error(String(err))) : resolve());
-    });
 }
 //# sourceMappingURL=db.js.map
