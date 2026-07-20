@@ -32,6 +32,7 @@ export function makeWebPage(url, extra = {}) {
         htmlPage: null,
         htmlPageLength: null,
         scrapedAt: null,
+        parsedAt: null,
         parsedData: null,
         pageInputs: [],
         pageLinks: [],
@@ -172,6 +173,13 @@ export function saveScrapedHtml(doc, fields) {
         doc.pageInputs = fields.pageInputs;
     if (fields.pageLinks !== undefined)
         doc.pageLinks = fields.pageLinks;
+    // Links/inputs were extracted inline, so mark the row as parsed too.
+    if (fields.pageLinks !== undefined || fields.pageInputs !== undefined) {
+        doc.parsedAt = fields.parsedAt ?? new Date().toISOString();
+    }
+    else if (fields.parsedAt !== undefined) {
+        doc.parsedAt = fields.parsedAt;
+    }
     doc.status = fields.status ?? "scraped";
     doc.statusMessage = fields.statusMessage ?? "";
     if (fields.Workflow !== undefined)

@@ -88,6 +88,8 @@ interface WebPage {
   htmlPageLength: number | null;
   /** ISO 8601 timestamp of when the page was scraped. Null if not yet scraped. */
   scrapedAt: string | null;
+  /** ISO 8601 timestamp of when the HTML was parsed for links/inputs. Null if not yet parsed. */
+  parsedAt: string | null;
   /** Extracted or parsed JSON data from the scraped HTML. */
   parsedData: JsonValue | null;
   /** Collection of clickable buttons found on the page. */
