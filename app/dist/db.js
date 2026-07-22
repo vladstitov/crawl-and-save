@@ -20,6 +20,12 @@ export const SEED_URL = "https://secondarylink.com/seclink/news";
 let db;
 let webPages;
 /**
+ * Cached in-flight/completed init. Building a second Loki instance would reload
+ * from disk and silently discard any writes not yet flushed by autosave, so
+ * every call after the first reuses this promise.
+ */
+let initPromise = null;
+/**
  * Build a fresh WebPage with sensible defaults. `htmlPage` starts null, which
  * flags the row as "needs scraping".
  */
@@ -46,8 +52,12 @@ export function makeWebPage(url, extra = {}) {
 }
 /** Open (or create) the on-disk database and return the `webPages` collection. */
 export function initDb() {
+    // Idempotent: repeated calls (e.g. one per goToUrl) reuse the open database
+    // instead of opening a second one over the same file.
+    if (initPromise)
+        return initPromise;
     mkdirSync(DATA_DIR, { recursive: true });
-    return new Promise((resolve, reject) => {
+    initPromise = new Promise((resolve, reject) => {
         db = new Loki(DB_FILE, {
             autoload: true,
             autoloadCallback: (err) => {
@@ -88,6 +98,11 @@ export function initDb() {
             autosaveInterval: 2000,
         });
     });
+    // A failed open must not be cached, or every later call replays the error.
+    initPromise.catch(() => {
+        initPromise = null;
+    });
+    return initPromise;
 }
 /** The live `webPages` collection (throws if the db is not initialised yet). */
 export function getCollection() {

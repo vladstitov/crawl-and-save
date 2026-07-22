@@ -5,6 +5,22 @@
 // with the id of the page that linked to it — dedup against already-queued
 // URLs is handled by `enqueueUrl` itself.
 import { enqueueUrl, saveNow } from "./db.js";
+import { isSecondaryNewsLink } from "./ai-ollama-controller.js";
+/** Resolve a link's URL against its page; return null if not a usable http(s) URL. */
+function toAbsoluteHttpUrl(rawUrl, base) {
+    if (!rawUrl)
+        return null;
+    let absolute;
+    try {
+        absolute = new URL(rawUrl, base).toString();
+    }
+    catch {
+        return null;
+    }
+    if (!absolute.startsWith("http://") && !absolute.startsWith("https://"))
+        return null;
+    return absolute;
+}
 /**
  * Enqueue every link on a scraped page's `pageLinks` as a new row. Skips
  * empty/invalid URLs and anything not http(s). Returns the number of links
@@ -13,21 +29,37 @@ import { enqueueUrl, saveNow } from "./db.js";
 export function enqueueLinksFromDoc(doc) {
     let count = 0;
     for (const link of doc.pageLinks) {
-        if (!link.url)
-            continue;
-        let absolute;
-        try {
-            absolute = new URL(link.url, doc.url).toString();
-        }
-        catch {
-            continue;
-        }
-        if (!absolute.startsWith("http://") && !absolute.startsWith("https://"))
+        const absolute = toAbsoluteHttpUrl(link.url, doc.url);
+        if (!absolute)
             continue;
         enqueueUrl(absolute, { parent_id: doc._id });
         count++;
     }
     saveNow();
     return count;
+}
+/**
+ * Like `enqueueLinksFromDoc`, but asks Ollama about each link first and only
+ * enqueues the ones classified as secondary-market news. Links are checked one
+ * by one (the LLM call is slow, so this can take a while for link-heavy pages).
+ * Returns the number of links enqueued.
+ *
+ * `onErrorEnqueue` is forwarded to the classifier: false (default) drops links
+ * on an ambiguous/failed verdict; true keeps them (fail-open).
+ */
+export async function enqueueNewsLinksFromDoc(doc, onErrorEnqueue = false) {
+    let enqueued = 0;
+    for (const link of doc.pageLinks) {
+        const absolute = toAbsoluteHttpUrl(link.url, doc.url);
+        if (!absolute)
+            continue;
+        const keep = await isSecondaryNewsLink({ url: absolute, text: link.text, title: link.title }, onErrorEnqueue);
+        if (!keep)
+            continue;
+        enqueueUrl(absolute, { parent_id: doc._id });
+        enqueued++;
+    }
+    saveNow();
+    return enqueued;
 }
 //# sourceMappingURL=distrebute-links.js.map
